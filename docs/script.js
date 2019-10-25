@@ -1,4 +1,4 @@
-/* globals comicgen, showdown, hljs, ClipboardJS, PlainDraggable, saveSvgAsPng */
+/* globals comicgen, showdown, hljs, ClipboardJS, saveSvgAsPng */
 
 // If the URL hash has a path, it's a non-home tab. Change to it and exit
 var url = g1.url.parse(location.hash.replace(/^#/, ''))
@@ -59,7 +59,7 @@ $.getJSON('files.json')
           options(q, attr, node[attr])
       })
       options(q, 'ext', ['svg', 'png'])
-      options(q, 'mirror', { '': '', 'mirror': '1' })
+      // options(q, 'mirror', { '': '', 'mirror': '1' })
       $('.comicgen-attrs .wip').remove()
       comicgen('.target', q)
       $('.target-container').css({ width: q.width + 'px', height: q.height + 'px' })
@@ -72,36 +72,6 @@ $.getJSON('files.json')
       $('.codegen').template({q: q})
     }).urlchange()
   })
-
-// Dragging the target image changes the x, y
-var pos
-new PlainDraggable($('.target').get(0), {
-  containment: {left: -10000, top: -10000, width: 50000, height: 50000},
-  onDragStart: function () { pos = {left: this.left, top: this.top} },
-  onDragEnd: function () {
-    $('input[name="x"]').val(Math.round(+(q.x || defaults.x) + this.left - pos.left))
-    $('input[name="y"]').val(Math.round(+(q.y || defaults.y) + this.top - pos.top))
-    location.hash = '?' + $('.selector').serialize()
-    this.left = pos.left
-    this.top = pos.top
-  }
-})
-
-// Zooming target changes scale
-$('.target').on('wheel', function (e) {
-  if (!e.ctrlKey)
-    return
-  var scale0 = +(q.scale || defaults.scale)
-  var scale = Math.round(scale0 * (1 - e.originalEvent.deltaY * 0.01) * 100, 2) / 100
-  if (scale == scale0 && e.originalEvent.deltaY < 0)
-    scale = scale0 + 0.01
-  $('input[name="scale"]').val(scale)
-  // Scale around the center
-  $('input[name="x"]').val(Math.round(+(q.x || defaults.x) + (+q.width || defaults.width) * (scale0 - scale) / 2))
-  $('input[name="y"]').val(Math.round(+(q.y || defaults.y) + (+q.height || defaults.height) * (scale0 - scale) / 2))
-  location.hash = '?' + $('.selector').serialize()
-  e.preventDefault()
-})
 
 // Reset button reverts to defaults on size, position & scale
 $('.reset').attr('href', '?' + $.param(defaults))
@@ -216,7 +186,7 @@ $.getJSON('files.json')
     namearr.forEach(function(character_name){
       var q = g1.url.parse('').update({name: character_name}).toString()
 
-      if (['aryan', 'ringo', 'zoe'].includes(character_name)){  
+      if (['aryan', 'zoe'].includes(character_name)){  
         var allemotions = node[character_name]['emotion']
         var allposes = node[character_name]['pose']
         emotionposecombinations(q, allemotions, allposes)

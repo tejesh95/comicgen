@@ -1,4 +1,4 @@
-/* globals comicgen, showdown, hljs, ClipboardJS, saveSvgAsPng */
+/* globals comicgen, showdown, hljs, ClipboardJS, fabric */
 
 // If the URL hash has a path, it's a non-home tab. Change to it and exit
 var url = g1.url.parse(location.hash.replace(/^#/, ''))
@@ -24,7 +24,7 @@ $.get('README.md')
   })
 
 // q holds the current state of the application, and the comicgen parameters
-var q
+var q, fabric_objs = {}
 var defaults = comicgen.defaults
 $.getJSON('files.json')
   .done(function (data) {
@@ -39,6 +39,17 @@ $.getJSON('files.json')
       url.pathname = url.pathname == 'home' ? '' : url.pathname
       location.hash = url.toString()
     })
+
+    var canvas_size = $('.target').width()
+
+    $('.target')
+      .append('<canvas id="canvas" width="' + canvas_size + '" height="' + canvas_size * 0.7 + '"></canvas>')
+    var canvas = new fabric.Canvas('canvas')
+
+    // .canvas-container was created by fabric.Canvas
+    $('.canvas-container').append('<div id="contextmenu"></div>')
+    var contextMenu = $('#contextmenu')
+
     // Any change in URL re-renders the strip
     $(window).on('#', function (e, url) {
       var node = data
@@ -58,18 +69,184 @@ $.getJSON('files.json')
         if (attr in format.files)
           options(q, attr, node[attr])
       })
-      options(q, 'ext', ['svg', 'png'])
+      // options(q, 'ext', ['svg', 'png'])
       // options(q, 'mirror', { '': '', 'mirror': '1' })
       $('.comicgen-attrs .wip').remove()
-      comicgen('.target', q)
-      $('.target-container').css({ width: q.width + 'px', height: q.height + 'px' })
+
+      $('.download-png').off('click').on('click', function download() {
+        var image = new Image()
+        image.src = canvas.toDataURL('png')
+        window.open('').document.write(image.outerHTML)
+      })
+
+      $('.download-svg').off('click').on('click', function download() {
+        window.open('').document.write(canvas.toSVG())
+      })
+
+      $('body')
+        .off('keyup')
+        .on('keyup', function (e) { if (e.keyCode == 46) deleteObjects(canvas) })
+
+
+      var _attrs = Object.assign({}, comicgen.defaults, q)
+
+      // TODO: Stacking order gets distorted when mirror is truthy
+
+      deleteObjects(canvas, q.name)
+      // if (q.name == speechbubbles) {
+      //   var newID = (new Date()).getTime().toString().substr(5);
+      //   var text = new fabric.IText('Add text here...', {
+      //     fontFamily: 'Neucha',
+      //     fontSize: 18,
+      //     left: 100,
+      //     top: 100,
+      //     myid: newID,
+      //     objecttype: 'text'
+      //   })
+
+      //   canvas.add(text)
+      // }
+
+      function showContextMenu() {
+        var controls = [
+          {
+            title: 'Delete Selection',
+            icon: 'far fa-trash-alt',
+            id: 'fab-delete'
+          },
+          {
+            title: 'Mirror Selection',
+            icon: 'fas fa-exchange-alt',
+            id: 'fab-mirror'
+          },
+          {
+            title: 'Bring to Front',
+            icon: 'fas fa-fast-forward',
+            id: 'fab-bringfront'
+          },
+          {
+            title: 'Send to Back',
+            icon: 'fas fa-fast-backward',
+            id: 'fab-sendback'
+          }
+        ]
+        var control_html = []
+        controls.forEach(function (action_item) {
+          control_html.push([`<button type="button" class="btn pb-0 px-2" id="${action_item.id}"
+            title="${action_item.title}">
+            <i class="${action_item.icon}"></i>
+            </button>`])
+        })
+        contextMenu.html(control_html.join('')).show()
+
+        return contextMenu
+      }
+
+      $('body')
+        .off('click', '#fab-delete').on('click', '#fab-delete', function () {
+          deleteObjects(canvas)
+        })
+        .off('click', '#fab-mirror').on('click', '#fab-mirror', function () {
+          mirrorObjects(canvas)
+        })
+        .off('click', '#fab-bringfront').on('click', '#fab-bringfront', function () {
+          bringToFrontObjects(canvas)
+        })
+        .off('click', '#fab-sendback').on('click', '#fab-sendback', function () {
+          sendToBackObjects(canvas)
+        })
+
+
+      function repositionContextMenu() {
+        var active_obj = canvas.getActiveObject()
+        $(contextMenu).css({
+          'top': (active_obj.top + active_obj.height * active_obj.scaleX) + 'px',
+          'left': (active_obj.left + active_obj.width / 2 * active_obj.scaleY) + 'px'
+        })
+      }
+
+      canvas.on('selection:cleared', function (event) {
+        var contextMenu = showContextMenu()
+        $(contextMenu).hide()
+      })
+      canvas.on('selection:created', function () {
+        var contextMenu = showContextMenu()
+        repositionContextMenu()
+        $(contextMenu).show()
+      })
+      canvas.on('selection:updated', function () {
+        repositionContextMenu()
+      })
+
+      canvas.on('object:moved', function () {
+        repositionContextMenu()
+      })
+
+      for (var attr in _attrs) {
+        if (attr in format.files) {
+          var row = format.files[attr]
+          var img = row.file.replace(/\$([a-z]*)/g, function (match, group) { return _attrs[group] })
+
+          var character_parts_url = `${comicgen.base}${_attrs.ext}/${img}.${_attrs.ext}`
+          $.get(character_parts_url)
+            .done(onload(row))
+        }
+      }
+
+      function onload(row) {
+        return function (res) {
+          $('body').append('<template></template>')
+          $('template').append(res.documentElement)
+          var temp_svg_jquery = $('template svg')
+          $('template').remove()
+          var temp_children = temp_svg_jquery.children()
+          var grouped_elm = temp_children.is('g') ? temp_children : $(document.createElement('g')).append(temp_children)
+          temp_svg_jquery.children().remove()
+          temp_svg_jquery.append(grouped_elm)
+
+          if ('getBBox' in temp_svg_jquery.get(0).querySelector('g')) {
+            var bbox = { x: 0, y: 0 }
+            bbox = temp_svg_jquery.get(0).querySelector('g').getBBox()
+            var svg_attrs = {
+              width: bbox.width,
+              height: bbox.height,
+              viewBox: [bbox.x, bbox.y, bbox.width, bbox.height].join(' ')
+            }
+            // if (mirror) svg_attrs['transform'] = mirror
+            for (var prop in svg_attrs) {
+              temp_svg_jquery.get(0).setAttribute(prop, svg_attrs[prop])
+            }
+          }
+
+          fabric.loadSVGFromString(temp_svg_jquery.get(0).outerHTML, function (objects, options) {
+            var obj = fabric.util.groupSVGElements(objects, options)
+            obj.set({ top: row.y + obj.top + 40, left: row.x + obj.left })
+            obj.setControlsVisibility({
+              mt: false, // middle top 
+              mb: false, // midle bottom
+              ml: false, // middle left
+              mr: false, // middle right
+            })
+
+            canvas.add(obj)
+            if (q.name in fabric_objs) fabric_objs[q.name].push(obj)
+            else {
+              fabric_objs[q.name] = []
+              fabric_objs[q.name].push(obj)
+            }
+          })
+          canvas.renderAll()
+        }
+      }
+
+      // $('.target-container').css({ width: q.width + 'px', height: q.height + 'px' })
       for (var key in defaults) {
         $('input[name="' + key + '"]').val(q[key] || defaults[key])
         // If a value is the same as the default, drop it
         if (q[key] == defaults[key])
           delete q[key]
       }
-      $('.codegen').template({q: q})
+      $('.codegen').template({ q: q })
     }).urlchange()
   })
 
@@ -86,44 +263,6 @@ $('.bg-color').on('input, change', function () {
 // Click on copy button to copy code
 new ClipboardJS('.copy')
 
-// Click on download button to download in the current format (SVG or PNG)
-$('.download').on('click', function () {
-  var ext = $(':input[name="ext"]').val()
-  var $target = $('.target > svg')
-  // filename = all character attributes ...
-  var filename = $('.comicgen-attrs select').map(function () { return $(this).val() })
-  // ... except the last 2 (ext, mirror)
-  filename = filename.get().slice(0, -2).join('-')
-  if (ext == 'png')
-    saveSvgAsPng($target.get(0), filename + '.png')
-  else if (ext == 'svg') {
-    // Create a copy of the SVG and replace the <image>s with the actual HTML
-    var $svg = $target.clone()
-    $svg.attr('xmlns', 'http://www.w3.org/2000/svg')
-    // Replace each image with the actual SVG
-    var $images = $svg.find('image')
-    $.when.apply($, $images.map(function () { return this.href.baseVal }).get().map($.get))
-      .done(function () {
-        var docs = _.map(arguments, function (v) { return v[2].responseText })
-        $images.each(function (i) {
-          var $this = $(this)
-          $this.replaceWith('<g transform="' + $this.attr('transform') + '">' + docs[i] + '</g>')
-        })
-        var link = document.createElement('a')
-        link.href = URL.createObjectURL(new Blob([
-          '<?xml version="1.0" standalone="no"?>\r\n',
-          $svg.get(0).outerHTML
-        ], { type: 'image/svg+xml;charset=utf-8' }))
-        link.download = filename + '.svg'
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      })
-  }
-})
-
-var template_arrows = _.template($('.arrows').html())
-
 // Utility: Set a default value for q[key] using data. Render <select> dropdown using data
 function options(q, key, data) {
   data = _.isArray(data) ? data : _.keys(data)
@@ -133,7 +272,6 @@ function options(q, key, data) {
   var $el = $('.comicgen-attrs .attr[name="' + key + '"]').removeClass('wip')
   if (!$el.length) {
     $el = $('<div>').addClass('attr mr-2 mb-2').attr('name', key)
-    $el.append($(template_arrows({key: key})))
     $el.append($('<select>').addClass('form-control').attr('name', key))
     var $after = $('.comicgen-attrs .attr:not(.wip):last')
     if ($after.length)
@@ -144,33 +282,18 @@ function options(q, key, data) {
   $el.find('select').html(options).val(q[key])
 }
 
-// Arrow buttons move
-_.each(
-  [
-    {left_or_right: '.move-left', target: 'prev', insert: 'insertBefore'},
-    {left_or_right: '.move-right', target: 'next', insert: 'insertAfter'},
-  ], function (conf) {
-    $('.comicgen-attrs').on('click', conf.left_or_right, function () {
-      var $this = $(this).parents('.attr')
-      var $target = $this[conf.target]()
-      if ($target.length) {
-        $this[conf.insert]($target)
-        location.hash = '?' + $('.selector').serialize()
-        $(window).trigger('#', g1.url.parse(location.hash.replace(/^#/, '')))
-      }
-    })
-  })
-
 var allurls = []
-function emotionposecombinations(basestr, emotionarr, posarr){
-  posarr.forEach(function(p){
-    emotionarr.forEach(function(e){
-      var q = '#' + g1.url.parse(basestr).update({pose: p, emotion: e, ext:'svg', mirror:'',
-        x:'0', y:'0', scale:'1', width:'500', height:'600'}).toString()
+function emotionposecombinations(basestr, emotionarr, posarr) {
+  posarr.forEach(function (p) {
+    emotionarr.forEach(function (e) {
+      var q = '#' + g1.url.parse(basestr).update({
+        pose: p, emotion: e, ext: 'svg', mirror: '',
+        x: '0', y: '0', scale: '1', width: '500', height: '600'
+      }).toString()
       allurls.push([q, e])
     })
   })
-  for (var i=allurls.length-1; i>0; i--){
+  for (var i = allurls.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1))
     var temp = allurls[i]
     allurls[i] = allurls[j]
@@ -183,18 +306,18 @@ $.getJSON('files.json')
     var node = data
     var namearr = Object.keys(node)
 
-    namearr.forEach(function(character_name){
-      var q = g1.url.parse('').update({name: character_name}).toString()
+    namearr.forEach(function (character_name) {
+      var q = g1.url.parse('').update({ name: character_name }).toString()
 
-      if (['aryan', 'zoe'].includes(character_name)){  
+      if (['aryan', 'zoe'].includes(character_name)) {
         var allemotions = node[character_name]['emotion']
         var allposes = node[character_name]['pose']
         emotionposecombinations(q, allemotions, allposes)
       }
-      else if (['dee', 'dey'].includes(character_name)){
+      else if (['dee', 'dey'].includes(character_name)) {
         var angles = ['straight', 'side', 'sitting']
-        angles.forEach(function(a){
-          q = g1.url.parse(q).update({angle: a}).toString()
+        angles.forEach(function (a) {
+          q = g1.url.parse(q).update({ angle: a }).toString()
           var allemotions = node[character_name][a]['emotion']
           var allposes = node[character_name][a]['pose']
           emotionposecombinations(q, allemotions, allposes)
@@ -203,16 +326,15 @@ $.getJSON('files.json')
     })
   })
 
-$.getJSON( 'docs/synonym.json' )
-  .done(function (synonym)
-  {
+$.getJSON('docs/synonym.json')
+  .done(function (synonym) {
     var linktemplate = _.template($('.search-links').html())
-    var result = linktemplate({links : allurls})
+    var result = linktemplate({ links: allurls })
     $('.target-search-panel').html(result)
 
-    allurls.forEach(function(url, index) {
+    allurls.forEach(function (url, index) {
       var q = g1.url.parse(url[0].replace(/#/, ''))
-      comicgen('#comicgen'+index, Object.assign({}, q.searchKey, {width: 200, height: 300}))
+      comicgen('#comicgen' + index, Object.assign({}, q.searchKey, { width: 200, height: 300 }))
     })
 
     // TODO LATER: Replace with a fuzzy string matching library
@@ -225,3 +347,47 @@ $.getJSON( 'docs/synonym.json' )
 
     $('body').search({ change: 'synonymsearch' })
   })
+
+
+function deleteObjects(canvas, char_name) {
+  if (!char_name) {
+    var activeGroup = canvas.getActiveObjects()
+    if (activeGroup.length)
+      activeGroup.forEach(function (object) { canvas.remove(object) })
+    return
+  }
+
+  // if (char_name in fabric_objs && char_name !== speechbubbles) {
+  if (char_name in fabric_objs) {
+    fabric_objs[char_name].forEach(function (obj) { canvas.remove(obj) })
+    delete fabric_objs[char_name]
+  }
+}
+
+
+function mirrorObjects(canvas) {
+  var activeGroup = canvas.getActiveObjects()
+  if (activeGroup.length)
+    activeGroup.forEach(function (obj) {
+      obj.set('flipX', !obj.flipX)
+    })
+  canvas.renderAll()
+}
+
+function bringToFrontObjects(canvas) {
+  var activeGroup = canvas.getActiveObjects()
+  if (activeGroup.length)
+    activeGroup.forEach(function (obj) {
+      obj.bringToFront()
+    })
+  canvas.renderAll()
+}
+
+function sendToBackObjects(canvas) {
+  var activeGroup = canvas.getActiveObjects()
+  if (activeGroup.length)
+    activeGroup.forEach(function (obj) {
+      obj.sendToBack()
+    })
+  canvas.renderAll()
+}

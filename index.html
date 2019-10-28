@@ -26,6 +26,7 @@
     img { max-width: 100%; }
     .attr { display: inline-block; }
     h3 { color: var(--danger); }
+    #contextmenu { background-color: coral; height: 30px; width: 140px; position: absolute;}
   </style>
   <link href="https://fonts.googleapis.com/css?family=Neucha" rel="stylesheet">
   <link href="https://learn.gramener.com/ui/bootstraptheme.css?font-family-base=Neucha,cursive&dark=%23675b9e&primary=%238b8ac1" rel="stylesheet">
@@ -92,8 +93,11 @@
               <div class="target"></div>
             </div>
             <div class="mb-3">
-              <button type="button" class="btn btn-sm btn-light border download" data-clipboard-target="#code">
-                <i class="far fa-arrow-alt-circle-down"></i> Save image
+              <button type="button" download class="btn btn-sm btn-light border download-png" data-clipboard-target="#code">
+                <i class="fas fa-arrow-alt-circle-down"></i> Download as PNG
+              </button>
+              <button type="button" class="btn btn-sm btn-light border download-svg" data-clipboard-target="#code">
+                <i class="fas fa-arrow-alt-circle-down"></i> Download as SVG
               </button>
               <button type="button" class="btn btn-sm btn-light border copy" data-clipboard-target="#code">
                 <i class="far fa-copy"></i> Copy code
@@ -160,14 +164,6 @@
     </p>
   </footer>
 
-  <script type="text/html" class="arrows">
-    <div class="d-flex justify-content-between">
-      <button class="btn btn-xs move-left" type="button" title="Move layer below" tabindex="-1"><i class="fa fa-xs fa-arrow-left"></i></button>
-      <span><%= key %></span>
-      <button class="btn btn-xs move-right" type="button" title="Move layer above" tabindex="-1"><i class="fa fa-xs fa-arrow-right"></i></button>
-    </div>
-  </script>
-
   <script type="text/html" class="search-links">
     <% _.each(links, function(link, index) { %>
       <a class="item" target="_blank" href="<%- link[0] %>" data-emotion="<%- link[1] %>" ><div id=<%= 'comicgen'.concat(index) %>></div></a>
@@ -184,6 +180,7 @@
   <script src="https://unpkg.com/plain-draggable@2.5.12/plain-draggable.min.js"></script>
   <script src="https://unpkg.com/save-svg-as-png@1.4.14/lib/saveSvgAsPng.js"></script>
   <script src="dist/comicgen.min.js"></script>
+  <script src="node_modules/fabric/dist/fabric.js"> </script>
   <script src="docs/script.js"></script>
 </body>
 </html>

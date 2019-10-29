@@ -1,5 +1,16 @@
 /* globals comicgen, showdown, hljs, ClipboardJS, fabric */
 
+var speechbubbles = 'speechbubbles'
+comicgen.namemap[speechbubbles] = speechbubbles
+comicgen.formats[speechbubbles] = {
+  width: 300,
+  height: 600,
+  dirs: [],
+  files: {
+    bubble: { file: '$name/$bubble', width: 136, height: 104, x: 63, y: 0 }
+  }
+}
+
 // If the URL hash has a path, it's a non-home tab. Change to it and exit
 var url = g1.url.parse(location.hash.replace(/^#/, ''))
 $('a[href="#' + url.pathname + '"]').tab('show')
@@ -93,19 +104,7 @@ $.getJSON('files.json')
       // TODO: Stacking order gets distorted when mirror is truthy
 
       deleteObjects(canvas, q.name)
-      // if (q.name == speechbubbles) {
-      //   var newID = (new Date()).getTime().toString().substr(5);
-      //   var text = new fabric.IText('Add text here...', {
-      //     fontFamily: 'Neucha',
-      //     fontSize: 18,
-      //     left: 100,
-      //     top: 100,
-      //     myid: newID,
-      //     objecttype: 'text'
-      //   })
 
-      //   canvas.add(text)
-      // }
 
       function showContextMenu() {
         var controls = [
@@ -165,7 +164,7 @@ $.getJSON('files.json')
         })
       }
 
-      canvas.on('selection:cleared', function (event) {
+      canvas.on('selection:cleared', function () {
         var contextMenu = showContextMenu()
         $(contextMenu).hide()
       })
@@ -357,8 +356,8 @@ function deleteObjects(canvas, char_name) {
     return
   }
 
-  // if (char_name in fabric_objs && char_name !== speechbubbles) {
-  if (char_name in fabric_objs) {
+  if (char_name in fabric_objs && char_name !== speechbubbles) {
+  // if (char_name in fabric_objs) {
     fabric_objs[char_name].forEach(function (obj) { canvas.remove(obj) })
     delete fabric_objs[char_name]
   }

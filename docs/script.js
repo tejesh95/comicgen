@@ -131,7 +131,7 @@ $.getJSON('files.json')
         ]
         var control_html = []
         controls.forEach(function (action_item) {
-          control_html.push([`<button type="button" class="btn pb-0 px-2" id="${action_item.id}"
+          control_html.push([`<button type="button" class="btn border round bg-color6 pb-0 px-2" id="${action_item.id}"
             title="${action_item.title}">
             <i class="${action_item.icon}"></i>
             </button>`])

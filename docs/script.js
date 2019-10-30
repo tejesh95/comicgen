@@ -368,14 +368,14 @@ function createContextMenu(contextMenu) {
       id: 'fab-mirror'
     },
     {
-      title: 'Bring to Front',
-      icon: 'fas fa-fast-forward',
-      id: 'fab-bringfront'
+      title: 'Send to Back',
+      icon: 'far fa-arrow-alt-circle-left',
+      id: 'fab-sendback'
     },
     {
-      title: 'Send to Back',
-      icon: 'fas fa-fast-backward',
-      id: 'fab-sendback'
+      title: 'Bring to Front',
+      icon: 'far fa-arrow-alt-circle-right',
+      id: 'fab-bringfront'
     }
   ]
   var control_html = []

@@ -488,31 +488,6 @@
       "standard",
       "twistedArrow",
       "straightArrow"
-    ],
-    "font Type": [
-      "Open Sans",
-      "Helvetica"
-    ],
-    "font Size": [
-      10,
-      11,
-      12,
-      14,
-      16,
-      18,
-      24,
-      28
-    ],
-    "font Color": [
-      "#333",
-      "#100",
-      "#010",
-      "#001"
-    ],
-    "alignment": [
-      "left",
-      "center",
-      "right"
     ]
   }
 }

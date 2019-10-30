@@ -19,14 +19,14 @@
 
   <style>
     /* Ensure that this is the first rule in the first stylesheet. Used by JS */
-    .target-container { background-color: #ffffff; }
+    .target-container { background-color: #ffffff;  }
     /* The rest can be any styles */
     .target-container { overflow: hidden; position: relative; }
     #code { white-space: pre-wrap; }
     img { max-width: 100%; }
     .attr { display: inline-block; }
     h3 { color: var(--danger); }
-    #contextmenu { height: 30px; width: 140px; position: absolute;}
+    #contextmenu { height: 30px; width: 200px; position: absolute;}
   </style>
   <link href="https://fonts.googleapis.com/css?family=Neucha" rel="stylesheet">
   <link href="https://learn.gramener.com/ui/bootstraptheme.css?font-family-base=Neucha,cursive&dark=%23675b9e&primary=%238b8ac1" rel="stylesheet">
@@ -89,7 +89,7 @@
               <input name="width" type="hidden" value="500">
               <input name="height" type="hidden" value="600">
             </form>
-            <div class="target-container my-2">
+            <div class="target-container my-2 border">
               <div class="target"></div>
             </div>
             <div class="mb-3">

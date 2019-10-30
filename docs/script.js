@@ -54,12 +54,26 @@ $.getJSON('files.json')
     var canvas_size = $('.target').width()
 
     $('.target')
-      .append('<canvas id="canvas" width="' + canvas_size + '" height="' + canvas_size * 0.7 + '"></canvas>')
+      .append('<canvas id="canvas" width="' + canvas_size + '" height="' + canvas_size * 0.9 + '"></canvas>')
     var canvas = new fabric.Canvas('canvas')
 
     // .canvas-container was created by fabric.Canvas
-    $('.canvas-container').append('<div id="contextmenu"></div>')
+    $('.canvas-container').append('<div id="contextmenu" class="d-none"></div>')
     var contextMenu = $('#contextmenu')
+    createContextMenu(contextMenu)
+    canvas.on('selection:cleared', function () {
+      contextMenu.addClass('d-none')
+    })
+    canvas.on('selection:created', function () {
+      contextMenu.removeClass('d-none')
+      repositionContextMenu(canvas, contextMenu)
+    })
+    canvas.on('selection:updated', function () {
+      repositionContextMenu(canvas, contextMenu)
+    })
+    canvas.on('object:modified', function () {
+      repositionContextMenu(canvas, contextMenu)
+    })
 
     // Any change in URL re-renders the strip
     $(window).on('#', function (e, url) {
@@ -100,45 +114,27 @@ $.getJSON('files.json')
 
 
       var _attrs = Object.assign({}, comicgen.defaults, q)
-
-      // TODO: Stacking order gets distorted when mirror is truthy
-
+      
       deleteObjects(canvas, q.name)
 
-
-      function showContextMenu() {
-        var controls = [
-          {
-            title: 'Delete Selection',
-            icon: 'far fa-trash-alt',
-            id: 'fab-delete'
-          },
-          {
-            title: 'Mirror Selection',
-            icon: 'fas fa-exchange-alt',
-            id: 'fab-mirror'
-          },
-          {
-            title: 'Bring to Front',
-            icon: 'fas fa-fast-forward',
-            id: 'fab-bringfront'
-          },
-          {
-            title: 'Send to Back',
-            icon: 'fas fa-fast-backward',
-            id: 'fab-sendback'
-          }
-        ]
-        var control_html = []
-        controls.forEach(function (action_item) {
-          control_html.push([`<button type="button" class="btn border round bg-color6 pb-0 px-2" id="${action_item.id}"
-            title="${action_item.title}">
-            <i class="${action_item.icon}"></i>
-            </button>`])
+      // TODO: Text layer must be added to canvas AFTER speechbubble layer is rendered
+      if (q.name == speechbubbles) {
+        var newID = (new Date()).getTime().toString().substr(5)
+        var text = new fabric.IText('Add text here...', {
+          fontFamily: 'Neucha',
+          fontSize: 20,
+          left: 100,
+          top: 100,
+          myid: newID,
+          objecttype: 'text'
         })
-        contextMenu.html(control_html.join('')).show()
-
-        return contextMenu
+        text.setControlsVisibility({
+          mt: false, // middle top 
+          mb: false, // midle bottom
+          ml: false, // middle left
+          mr: false, // middle right
+        })
+        canvas.add(text)
       }
 
       $('body')
@@ -154,32 +150,6 @@ $.getJSON('files.json')
         .off('click', '#fab-sendback').on('click', '#fab-sendback', function () {
           sendToBackObjects(canvas)
         })
-
-
-      function repositionContextMenu() {
-        var active_obj = canvas.getActiveObject()
-        $(contextMenu).css({
-          'top': (active_obj.top + active_obj.height * active_obj.scaleX) + 'px',
-          'left': (active_obj.left + active_obj.width / 2 * active_obj.scaleY) + 'px'
-        })
-      }
-
-      canvas.on('selection:cleared', function () {
-        var contextMenu = showContextMenu()
-        $(contextMenu).hide()
-      })
-      canvas.on('selection:created', function () {
-        var contextMenu = showContextMenu()
-        repositionContextMenu()
-        $(contextMenu).show()
-      })
-      canvas.on('selection:updated', function () {
-        repositionContextMenu()
-      })
-
-      canvas.on('object:moved', function () {
-        repositionContextMenu()
-      })
 
       for (var attr in _attrs) {
         if (attr in format.files) {
@@ -211,7 +181,6 @@ $.getJSON('files.json')
               height: bbox.height,
               viewBox: [bbox.x, bbox.y, bbox.width, bbox.height].join(' ')
             }
-            // if (mirror) svg_attrs['transform'] = mirror
             for (var prop in svg_attrs) {
               temp_svg_jquery.get(0).setAttribute(prop, svg_attrs[prop])
             }
@@ -220,12 +189,7 @@ $.getJSON('files.json')
           fabric.loadSVGFromString(temp_svg_jquery.get(0).outerHTML, function (objects, options) {
             var obj = fabric.util.groupSVGElements(objects, options)
             obj.set({ top: row.y + obj.top + 40, left: row.x + obj.left })
-            obj.setControlsVisibility({
-              mt: false, // middle top 
-              mb: false, // midle bottom
-              ml: false, // middle left
-              mr: false, // middle right
-            })
+            obj.setControlsVisibility({ mt: false, mb: false, ml: false, mr: false })
 
             canvas.add(obj)
             if (q.name in fabric_objs) fabric_objs[q.name].push(obj)
@@ -389,4 +353,45 @@ function sendToBackObjects(canvas) {
       obj.sendToBack()
     })
   canvas.renderAll()
+}
+
+function createContextMenu(contextMenu) {
+  var controls = [
+    {
+      title: 'Delete Selection',
+      icon: 'far fa-trash-alt',
+      id: 'fab-delete'
+    },
+    {
+      title: 'Mirror Selection',
+      icon: 'fas fa-exchange-alt',
+      id: 'fab-mirror'
+    },
+    {
+      title: 'Bring to Front',
+      icon: 'fas fa-fast-forward',
+      id: 'fab-bringfront'
+    },
+    {
+      title: 'Send to Back',
+      icon: 'fas fa-fast-backward',
+      id: 'fab-sendback'
+    }
+  ]
+  var control_html = []
+  controls.forEach(function (action_item) {
+    control_html.push([`<button type="button" class="btn border round bg-color6 pb-0 px-2" id="${action_item.id}"
+            title="${action_item.title}">
+            <i class="${action_item.icon}"></i>
+            </button>`])
+  })
+  contextMenu.html(control_html.join('')).show()
+}
+
+function repositionContextMenu(canvas, contextMenu) {
+  var active_obj = canvas.getActiveObject()
+  contextMenu.css({
+    'top': (active_obj.top + active_obj.height * active_obj.scaleX) + 'px',
+    'left': (active_obj.left + active_obj.width / 2 * active_obj.scaleY) + 'px'
+  })
 }

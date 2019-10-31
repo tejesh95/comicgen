@@ -485,9 +485,6 @@
   },
   "speechbubbles": {
     "bubble": [
-      "standard",
-      "twistedArrow",
-      "straightArrow",
       "speechbubble1",
       "speechbubble2",
       "speechbubble3",

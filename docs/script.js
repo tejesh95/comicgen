@@ -369,12 +369,12 @@ function createContextMenu(contextMenu) {
     },
     {
       title: 'Send to Back',
-      icon: 'far fa-arrow-alt-circle-left',
+      icon: 'fas fa-angle-double-down',
       id: 'fab-sendback'
     },
     {
       title: 'Bring to Front',
-      icon: 'far fa-arrow-alt-circle-right',
+      icon: 'fas fa-angle-double-up',
       id: 'fab-bringfront'
     }
   ]

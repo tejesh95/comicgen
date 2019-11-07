@@ -110,12 +110,12 @@ $.getJSON('files.json')
 
       $('body')
         .off('keyup')
-        .on('keyup', function (e) { if (e.keyCode == 46) deleteObjects(canvas) })
+        .on('keyup', function (e) { if (e.keyCode == 46) object_action(canvas, 'delete') })
 
 
       var _attrs = Object.assign({}, comicgen.defaults, q)
       
-      deleteObjects(canvas, q.name)
+      deleteCharacter(canvas, q.name)
 
       // TODO: Text layer must be added to canvas AFTER speechbubble layer is rendered
       if (q.name == speechbubbles) {
@@ -139,16 +139,16 @@ $.getJSON('files.json')
 
       $('body')
         .off('click', '#fab-delete').on('click', '#fab-delete', function () {
-          deleteObjects(canvas)
+          object_action(canvas, 'delete')
         })
         .off('click', '#fab-mirror').on('click', '#fab-mirror', function () {
-          mirrorObjects(canvas)
+          object_action(canvas, 'mirror')
         })
         .off('click', '#fab-bringfront').on('click', '#fab-bringfront', function () {
-          bringToFrontObjects(canvas)
+          object_action(canvas, 'bringfront')
         })
         .off('click', '#fab-sendback').on('click', '#fab-sendback', function () {
-          sendToBackObjects(canvas)
+          object_action(canvas, 'sendback')
         })
 
       for (var attr in _attrs) {
@@ -312,48 +312,39 @@ $.getJSON('docs/synonym.json')
   })
 
 
-function deleteObjects(canvas, char_name) {
-  if (!char_name) {
-    var activeGroup = canvas.getActiveObjects()
-    if (activeGroup.length)
-      activeGroup.forEach(function (object) { canvas.remove(object) })
-    return
-  }
 
+function deleteCharacter(canvas, char_name) {
   if (char_name in fabric_objs && char_name !== speechbubbles) {
-  // if (char_name in fabric_objs) {
     fabric_objs[char_name].forEach(function (obj) { canvas.remove(obj) })
     delete fabric_objs[char_name]
   }
 }
 
+var actions = {
+  delete: function(obj, canvas) {
+    canvas.remove(obj)
+  },
+  mirror: function(obj) {
+    obj.set('flipX', !obj.flipX) 
+  },
+  bringfront: function(obj) {
+    obj.bringToFront()
+  },
+  sendback: function(obj) {
+    obj.sendToBack()
+  }
+}
 
-function mirrorObjects(canvas) {
+function object_action(canvas, action) {
   var activeGroup = canvas.getActiveObjects()
-  if (activeGroup.length)
-    activeGroup.forEach(function (obj) {
-      obj.set('flipX', !obj.flipX)
-    })
+  if (!activeGroup.length) return
+
+  activeGroup.forEach(function (obj) {
+    actions[action](obj, canvas)
+  })
   canvas.renderAll()
 }
 
-function bringToFrontObjects(canvas) {
-  var activeGroup = canvas.getActiveObjects()
-  if (activeGroup.length)
-    activeGroup.forEach(function (obj) {
-      obj.bringToFront()
-    })
-  canvas.renderAll()
-}
-
-function sendToBackObjects(canvas) {
-  var activeGroup = canvas.getActiveObjects()
-  if (activeGroup.length)
-    activeGroup.forEach(function (obj) {
-      obj.sendToBack()
-    })
-  canvas.renderAll()
-}
 
 function createContextMenu(contextMenu) {
   var controls = [

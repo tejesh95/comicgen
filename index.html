@@ -37,7 +37,7 @@
     window.dataLayer = window.dataLayer || []
     function gtag() { window.dataLayer.push(arguments) }
     gtag('js', new Date())
-    gtag('config', 'UA-42126862-1')
+    gtag('config', 'UA-42126862-1', { 'optimize_id': 'GTM-KB9VXCW' })
   </script>
 </head>
 
@@ -166,7 +166,7 @@
 
   <script type="text/html" class="search-links">
     <% _.each(links, function(link, index) { %>
-      <a class="item" target="_blank" href="<%- link[0] %>" data-emotion="<%- link[1] %>" ><div id=<%= 'comicgen'.concat(index) %>></div></a>
+      <a class="item m-4" target="_blank" href="<%- link[0] %>" data-emotion="<%- link[1] %>" ><div id=<%= 'comicgen'.concat(index) %>></div></a>
     <% }) %>
   </script>
 

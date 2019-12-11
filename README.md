@@ -654,7 +654,7 @@ Developers access comicgen through a JS library. What can we do to make it easie
 
 ### Character credits
 
-- Dee, Dey, Priya & Ringo: By Ramya Mylavarapu <ramya.mylavarapu@gramener.com>
+- Dee, Dey, Priya, Ringo & Speechbubbles: By Ramya Mylavarapu <ramya.mylavarapu@gramener.com>
   under [CC0 license](https://creativecommons.org/choose/zero/)
 - [Humaaans](https://www.humaaans.com/): By [Pablo Stanley](https://twitter.com/pablostanley)
   under [CC-BY license](https://creativecommons.org/licenses/by/4.0/)
@@ -764,6 +764,16 @@ Please e-mail Anand <s.anand@gramener.com> and Richie <richie.lionell@gramener.c
   </div>
 </div>
 <!-- end -->
+
+<!-- var privacypolicy -->
+
+### Privacy Policy
+
+Gramener visuals do not externally collect any information, personal or otherwise.
+If you have any questions, please contact us at [comicgen.powerbi@gramener.com](mailto:comicgen.powerbi@gramener.com)
+
+<!-- end -->
+
 
 <!-- var social_markdown -->
 <!-- Github README won't display the above share icons. So create links. Don't display this on index.html -->
